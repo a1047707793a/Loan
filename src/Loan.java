@@ -7,6 +7,11 @@ public class Loan {
         this.customerName = customerName;
         this.loanAmount = loanAmount;
         this.paidAmount = paidAmount;
+
+        if (this.paidAmount > this.loanAmount) {
+            this.paidAmount = this.loanAmount;
+            System.out.println("Excess payment has been refunded.");
+        }
     }
 
     public String getCustomerName() {
@@ -18,7 +23,6 @@ public class Loan {
         double remaining = loanAmount - paidAmount;
         if (remaining < 0) {
             remaining = 0;
-            System.out.println("Excess payment has been refunded.");
         }
         return remaining;
     }
@@ -38,6 +42,7 @@ public class Loan {
             paidAmount = paidAmount + amount;
             if (paidAmount > loanAmount) {
                 paidAmount = loanAmount;
+                System.out.println("Excess payment has been refunded.");
             }
         }
     }
