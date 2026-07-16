@@ -13,28 +13,23 @@ public class Main {
             System.out.println("2. Make Repayment");
             System.out.println("3. Display All Loans");
             System.out.println("4. Exit");
-            System.out.print("Choose option: ");
-            choice = scanner.nextInt();
-            scanner.nextLine(); // Clear newline after numeric input.
+            choice = readIntInRange(scanner, "Choose option: ", 1, 4);
 
             if (choice == 1) {
                 if (loanCount >= loans.length) {
                     System.out.println("Database is full. Cannot add more customers.");
                 } else {
-                    System.out.print("Enter customer name: ");
-                    String name = scanner.nextLine();
+                    String name = readValidName(scanner);
+                    double loanAmount = readPositiveDouble(scanner, "Enter loan amount: ");
+                    double paidAmount = readNonNegativeDouble(scanner);
 
-                    System.out.print("Enter loan amount: ");
-                    double loanAmount = scanner.nextDouble();
-
-                    System.out.print("Enter initial paid amount: ");
-                    double paidAmount = scanner.nextDouble();
-                    scanner.nextLine();
-
-                    loans[loanCount] = new Loan(name, loanAmount, paidAmount);
-                    loanCount++;
-
-                    System.out.println("Customer loan added successfully.");
+                    try {
+                        loans[loanCount] = new Loan(name, loanAmount, paidAmount);
+                        loanCount++;
+                        System.out.println("Customer loan added successfully.");
+                    } catch (IllegalArgumentException ex) {
+                        System.out.println("Error: " + ex.getMessage());
+                    }
                 }
             } else if (choice == 2) {
                 if (loanCount == 0) {
@@ -45,19 +40,15 @@ public class Main {
                         System.out.println(i + " - " + loans[i].getCustomerName());
                     }
 
-                    System.out.print("Enter customer index (0 to " + (loanCount - 1) + "): ");
-                    int index = scanner.nextInt();
+                    int index = readIntInRange(scanner,
+                            "Enter customer index (0 to " + (loanCount - 1) + "): ", 0, loanCount - 1);
+                    double payment = readPositiveDouble(scanner, "Enter repayment amount: ");
 
-                    if (index >= 0 && index < loanCount) {
-                        System.out.print("Enter repayment amount: ");
-                        double payment = scanner.nextDouble();
-                        scanner.nextLine();
-
+                    try {
                         loans[index].makePayment(payment);
                         System.out.println("Repayment updated successfully.");
-                    } else {
-                        System.out.println("Invalid index.");
-                        scanner.nextLine();
+                    } catch (IllegalArgumentException ex) {
+                        System.out.println("Error: " + ex.getMessage());
                     }
                 }
             } else if (choice == 3) {
@@ -78,6 +69,79 @@ public class Main {
         } while (choice != 4);
 
         scanner.close();
+    }
+
+    private static int readIntInRange(Scanner scanner, String prompt, int min, int max) {
+        while (true) {
+            System.out.print(prompt);
+            String input = scanner.nextLine().trim();
+            try {
+                int value = Integer.parseInt(input);
+                if (value >= min && value <= max) {
+                    return value;
+                }
+            } catch (NumberFormatException ignored) {
+                // Keep prompting until user enters a valid integer.
+            }
+            System.out.println("Invalid input. Please enter a number from " + min + " to " + max + ".");
+        }
+    }
+
+    private static double readPositiveDouble(Scanner scanner, String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = scanner.nextLine().trim();
+            try {
+                double value = Double.parseDouble(input);
+                if (Double.isFinite(value) && value > 0) {
+                    return value;
+                }
+            } catch (NumberFormatException ignored) {
+                // Keep prompting until user enters a valid number.
+            }
+            System.out.println("Invalid amount. Please enter a positive number.");
+        }
+    }
+
+    private static double readNonNegativeDouble(Scanner scanner) {
+        while (true) {
+            System.out.print("Enter initial paid amount: ");
+            String input = scanner.nextLine().trim();
+            try {
+                double value = Double.parseDouble(input);
+                if (Double.isFinite(value) && value >= 0) {
+                    return value;
+                }
+            } catch (NumberFormatException ignored) {
+                // Keep prompting until user enters a valid number.
+            }
+            System.out.println("Invalid amount. Please enter a non-negative number.");
+        }
+    }
+
+    private static String readValidName(Scanner scanner) {
+        while (true) {
+            System.out.print("Enter customer name: ");
+            String name = scanner.nextLine().trim();
+            if (isValidName(name)) {
+                return name;
+            }
+            System.out.println("Invalid name. Use letters and spaces only.");
+        }
+    }
+
+    private static boolean isValidName(String name) {
+        if (name.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (!Character.isLetter(c) && c != ' ') {
+                return false;
+            }
+        }
+        return true;
     }
 }
 

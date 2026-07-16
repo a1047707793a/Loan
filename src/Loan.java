@@ -1,10 +1,20 @@
 public class Loan {
-    private String customerName;
-    private double loanAmount;
+    private final String customerName;
+    private final double loanAmount;
     private double paidAmount;
 
     public Loan(String customerName, double loanAmount, double paidAmount) {
-        this.customerName = customerName;
+        if (customerName == null || customerName.trim().isEmpty() || !isValidName(customerName.trim())) {
+            throw new IllegalArgumentException("Customer name must contain letters and spaces only.");
+        }
+        if (!Double.isFinite(loanAmount) || loanAmount <= 0) {
+            throw new IllegalArgumentException("Loan amount must be a positive number.");
+        }
+        if (!Double.isFinite(paidAmount) || paidAmount < 0) {
+            throw new IllegalArgumentException("Initial paid amount must be a non-negative number.");
+        }
+
+        this.customerName = customerName.trim();
         this.loanAmount = loanAmount;
         this.paidAmount = paidAmount;
 
@@ -38,13 +48,25 @@ public class Loan {
 
     // Adds repayment amount to paid amount.
     public void makePayment(double amount) {
-        if (amount > 0) {
-            paidAmount = paidAmount + amount;
-            if (paidAmount > loanAmount) {
-                paidAmount = loanAmount;
-                System.out.println("Excess payment has been refunded.");
+        if (!Double.isFinite(amount) || amount <= 0) {
+            throw new IllegalArgumentException("Repayment amount must be a positive number.");
+        }
+
+        paidAmount = paidAmount + amount;
+        if (paidAmount > loanAmount) {
+            paidAmount = loanAmount;
+            System.out.println("Excess payment has been refunded.");
+        }
+    }
+
+    private static boolean isValidName(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (!Character.isLetter(c) && c != ' ') {
+                return false;
             }
         }
+        return true;
     }
 
     public void displayLoanInfo() {
