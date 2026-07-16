@@ -1,6 +1,10 @@
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 public class Main {
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}]+(?: [\\p{L}]+)*$");
+    private static final Pattern POSITIVE_AMOUNT_PATTERN = Pattern.compile("^(?!0+(?:\\.0+)?$)\\d+(?:\\.\\d+)?$");
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         Loan[] loans = new Loan[5]; // Simulated local database in memory.
@@ -47,7 +51,7 @@ public class Main {
                         continue;
                     }
 
-                    double payment = readPositiveDouble(scanner, "Enter repayment amount: ");
+                    double payment = readRepaymentAmountByRegex(scanner, "Enter repayment amount: ");
 
                     try {
                         loans[index].makePayment(payment);
@@ -152,17 +156,18 @@ public class Main {
     }
 
     private static boolean isValidName(String name) {
-        if (name.isEmpty()) {
-            return false;
-        }
+        return NAME_PATTERN.matcher(name).matches();
+    }
 
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            if (!Character.isLetter(c) && c != ' ') {
-                return false;
+    private static double readRepaymentAmountByRegex(Scanner scanner, String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = scanner.nextLine().trim();
+            if (POSITIVE_AMOUNT_PATTERN.matcher(input).matches()) {
+                return Double.parseDouble(input);
             }
+            System.out.println("Invalid amount. Repayment must be a positive number.");
         }
-        return true;
     }
 
     private static int findLoanIndexById(Loan[] loans, int loanCount, int loanId) {
