@@ -1,4 +1,8 @@
+import java.util.regex.Pattern;
+
 public class Loan {
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}]+(?: [\\p{L}]+)*$");
+
     private static int nextLoanId = 1;
 
     private final int loanId;
@@ -68,13 +72,7 @@ public class Loan {
     }
 
     private static boolean isValidName(String name) {
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            if (!Character.isLetter(c) && c != ' ') {
-                return false;
-            }
-        }
-        return true;
+        return NAME_PATTERN.matcher(name).matches();
     }
 
     public void displayLoanInfo() {
