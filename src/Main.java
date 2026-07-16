@@ -25,8 +25,8 @@ public class Main {
 
                     try {
                         loans[loanCount] = new Loan(name, loanAmount, paidAmount);
+                        System.out.println("Customer loan added successfully. Customer ID: " + loans[loanCount].getLoanId());
                         loanCount++;
-                        System.out.println("Customer loan added successfully.");
                     } catch (IllegalArgumentException ex) {
                         System.out.println("Error: " + ex.getMessage());
                     }
@@ -35,13 +35,18 @@ public class Main {
                 if (loanCount == 0) {
                     System.out.println("No customers available. Add a loan first.");
                 } else {
-                    System.out.println("Available customer indexes:");
+                    System.out.println("Available customers (ID - Name):");
                     for (int i = 0; i < loanCount; i++) {
-                        System.out.println(i + " - " + loans[i].getCustomerName());
+                        System.out.println(loans[i].getLoanId() + " - " + loans[i].getCustomerName());
                     }
 
-                    int index = readIntInRange(scanner,
-                            "Enter customer index (0 to " + (loanCount - 1) + "): ", 0, loanCount - 1);
+                    int customerId = readPositiveInt(scanner, "Enter customer ID: ");
+                    int index = findLoanIndexById(loans, loanCount, customerId);
+                    if (index == -1) {
+                        System.out.println("Invalid customer ID.");
+                        continue;
+                    }
+
                     double payment = readPositiveDouble(scanner, "Enter repayment amount: ");
 
                     try {
@@ -84,6 +89,22 @@ public class Main {
                 // Keep prompting until user enters a valid integer.
             }
             System.out.println("Invalid input. Please enter a number from " + min + " to " + max + ".");
+        }
+    }
+
+    private static int readPositiveInt(Scanner scanner, String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = scanner.nextLine().trim();
+            try {
+                int value = Integer.parseInt(input);
+                if (value > 0) {
+                    return value;
+                }
+            } catch (NumberFormatException ignored) {
+                // Keep prompting until user enters a valid integer.
+            }
+            System.out.println("Invalid input. Please enter a positive integer.");
         }
     }
 
@@ -142,6 +163,15 @@ public class Main {
             }
         }
         return true;
+    }
+
+    private static int findLoanIndexById(Loan[] loans, int loanCount, int loanId) {
+        for (int i = 0; i < loanCount; i++) {
+            if (loans[i].getLoanId() == loanId) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
 
