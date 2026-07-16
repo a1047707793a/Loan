@@ -1,3 +1,4 @@
+import java.math.BigDecimal;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -24,8 +25,8 @@ public class Main {
                     System.out.println("Database is full. Cannot add more customers.");
                 } else {
                     String name = readValidName(scanner);
-                    double loanAmount = readPositiveDouble(scanner, "Enter loan amount: ");
-                    double paidAmount = readNonNegativeDouble(scanner);
+                    BigDecimal loanAmount = readPositiveAmount(scanner, "Enter loan amount: ");
+                    BigDecimal paidAmount = readNonNegativeAmount(scanner);
 
                     try {
                         loans[loanCount] = new Loan(name, loanAmount, paidAmount);
@@ -39,9 +40,18 @@ public class Main {
                 if (loanCount == 0) {
                     System.out.println("No customers available. Add a loan first.");
                 } else {
-                    System.out.println("Available customers (ID - Name):");
+                    System.out.println("Available customers for repayment (ID - Name):");
+                    boolean hasOutstandingLoan = false;
                     for (int i = 0; i < loanCount; i++) {
-                        System.out.println(loans[i].getLoanId() + " - " + loans[i].getCustomerName());
+                        if (loans[i].calculateRemainingBalance().compareTo(BigDecimal.ZERO) > 0) {
+                            System.out.println(loans[i].getLoanId() + " - " + loans[i].getCustomerName());
+                            hasOutstandingLoan = true;
+                        }
+                    }
+
+                    if (!hasOutstandingLoan) {
+                        System.out.println("No outstanding loans available for repayment.");
+                        continue;
                     }
 
                     int customerId = readPositiveInt(scanner, "Enter customer ID: ");
@@ -50,8 +60,12 @@ public class Main {
                         System.out.println("Invalid customer ID.");
                         continue;
                     }
+                    if (loans[index].calculateRemainingBalance().compareTo(BigDecimal.ZERO) == 0) {
+                        System.out.println("This loan is already completed and cannot receive more repayments.");
+                        continue;
+                    }
 
-                    double payment = readRepaymentAmountByRegex(scanner, "Enter repayment amount: ");
+                    BigDecimal payment = readRepaymentAmountByRegex(scanner, "Enter repayment amount: ");
 
                     try {
                         loans[index].makePayment(payment);
@@ -112,13 +126,13 @@ public class Main {
         }
     }
 
-    private static double readPositiveDouble(Scanner scanner, String prompt) {
+    private static BigDecimal readPositiveAmount(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
             try {
-                double value = Double.parseDouble(input);
-                if (Double.isFinite(value) && value > 0) {
+                BigDecimal value = new BigDecimal(input);
+                if (value.compareTo(BigDecimal.ZERO) > 0) {
                     return value;
                 }
             } catch (NumberFormatException ignored) {
@@ -128,13 +142,13 @@ public class Main {
         }
     }
 
-    private static double readNonNegativeDouble(Scanner scanner) {
+    private static BigDecimal readNonNegativeAmount(Scanner scanner) {
         while (true) {
             System.out.print("Enter initial paid amount: ");
             String input = scanner.nextLine().trim();
             try {
-                double value = Double.parseDouble(input);
-                if (Double.isFinite(value) && value >= 0) {
+                BigDecimal value = new BigDecimal(input);
+                if (value.compareTo(BigDecimal.ZERO) >= 0) {
                     return value;
                 }
             } catch (NumberFormatException ignored) {
@@ -159,12 +173,12 @@ public class Main {
         return NAME_PATTERN.matcher(name).matches();
     }
 
-    private static double readRepaymentAmountByRegex(Scanner scanner, String prompt) {
+    private static BigDecimal readRepaymentAmountByRegex(Scanner scanner, String prompt) {
         while (true) {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
             if (POSITIVE_AMOUNT_PATTERN.matcher(input).matches()) {
-                return Double.parseDouble(input);
+                return new BigDecimal(input);
             }
             System.out.println("Invalid amount. Repayment must be a positive number.");
         }
