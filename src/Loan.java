@@ -2,8 +2,10 @@ import java.math.BigDecimal;
 import java.util.regex.Pattern;
 
 public class Loan {
+    // Reuse the same name rule used by input validation to keep model constraints consistent.
     private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}]+(?: [\\p{L}]+)*$");
 
+    // Auto-incremented ID for demo purposes (in-memory only).
     private static int nextLoanId = 1;
 
     private final int loanId;
@@ -12,6 +14,7 @@ public class Loan {
     private BigDecimal paidAmount;
 
     public Loan(String customerName, BigDecimal loanAmount, BigDecimal paidAmount) {
+        // Constructor guards keep every Loan object valid from creation.
         if (customerName == null || customerName.trim().isEmpty() || !isValidName(customerName.trim())) {
             throw new IllegalArgumentException("Customer name must contain letters and spaces only.");
         }
@@ -27,6 +30,7 @@ public class Loan {
         this.loanAmount = loanAmount;
         this.paidAmount = paidAmount;
 
+        // Clamp overpaid initial amounts and report refund behavior.
         if (this.paidAmount.compareTo(this.loanAmount) > 0) {
             this.paidAmount = this.loanAmount;
             System.out.println("Excess payment has been refunded.");
@@ -69,6 +73,7 @@ public class Loan {
         }
 
         paidAmount = paidAmount.add(amount);
+        // Prevent balance from going negative when payment exceeds the remaining amount.
         if (paidAmount.compareTo(loanAmount) > 0) {
             paidAmount = loanAmount;
             System.out.println("Excess payment has been refunded.");

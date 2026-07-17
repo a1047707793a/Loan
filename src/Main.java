@@ -3,12 +3,15 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class Main {
+    // Accept names made of letters (including Unicode letters) with single spaces between words.
     private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}]+(?: [\\p{L}]+)*$");
+    // Reject zero and allow positive decimal numbers for repayments.
     private static final Pattern POSITIVE_AMOUNT_PATTERN = Pattern.compile("^(?!0+(?:\\.0+)?$)\\d+(?:\\.\\d+)?$");
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        Loan[] loans = new Loan[5]; // Simulated local database in memory.
+        // Simple fixed-size in-memory storage for this console app.
+        Loan[] loans = new Loan[5];
         int loanCount = 0;
         int choice;
 
@@ -20,6 +23,7 @@ public class Main {
             System.out.println("4. Exit");
             choice = readIntInRange(scanner, "Choose option: ", 1, 4);
 
+            // Route menu choices to the corresponding action.
             if (choice == 1) {
                 if (loanCount >= loans.length) {
                     System.out.println("Database is full. Cannot add more customers.");
@@ -95,6 +99,7 @@ public class Main {
     }
 
     private static int readIntInRange(Scanner scanner, String prompt, int min, int max) {
+        // Shared validator for menu-like choices with a bounded integer range.
         while (true) {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
@@ -111,6 +116,7 @@ public class Main {
     }
 
     private static int readPositiveInt(Scanner scanner, String prompt) {
+        // Used for IDs and other integer-only positive input.
         while (true) {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
@@ -127,6 +133,7 @@ public class Main {
     }
 
     private static BigDecimal readPositiveAmount(Scanner scanner, String prompt) {
+        // Used for loan amounts that must be strictly greater than zero.
         while (true) {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
@@ -143,6 +150,7 @@ public class Main {
     }
 
     private static BigDecimal readNonNegativeAmount(Scanner scanner) {
+        // Allows starting with 0 paid, but never a negative paid amount.
         while (true) {
             System.out.print("Enter initial paid amount: ");
             String input = scanner.nextLine().trim();
@@ -159,6 +167,7 @@ public class Main {
     }
 
     private static String readValidName(Scanner scanner) {
+        // Keep prompting until the name matches the configured regex rule.
         while (true) {
             System.out.print("Enter customer name: ");
             String name = scanner.nextLine().trim();
@@ -174,6 +183,7 @@ public class Main {
     }
 
     private static BigDecimal readRepaymentAmountByRegex(Scanner scanner, String prompt) {
+        // Regex-driven parsing keeps repayment validation consistent with business rules.
         while (true) {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
@@ -185,6 +195,7 @@ public class Main {
     }
 
     private static int findLoanIndexById(Loan[] loans, int loanCount, int loanId) {
+        // Linear scan is enough for the small fixed-size in-memory list.
         for (int i = 0; i < loanCount; i++) {
             if (loans[i].getLoanId() == loanId) {
                 return i;
