@@ -2,6 +2,8 @@ import java.math.BigDecimal;
 import java.util.Scanner;
 
 public class Main {
+    private static final LoanRules LOAN_RULES = DefaultLoanRules.getInstance();
+
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         // Simple fixed-size in-memory storage for this console app.
@@ -179,7 +181,7 @@ public class Main {
     }
 
     private static boolean isValidName(String name) {
-        return ValidationPatterns.NAME_PATTERN.matcher(name).matches();
+        return LOAN_RULES.isValidCustomerName(name);
     }
 
     private static BigDecimal readRepaymentAmountByRegex(Scanner scanner, String prompt) {
@@ -187,7 +189,7 @@ public class Main {
         while (true) {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
-            if (ValidationPatterns.POSITIVE_AMOUNT_PATTERN.matcher(input).matches()) {
+            if (LOAN_RULES.isValidRepaymentInput(input)) {
                 return new BigDecimal(input);
             }
             System.out.println("Invalid amount. Repayment must be a positive number.");
