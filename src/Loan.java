@@ -1,10 +1,6 @@
 import java.math.BigDecimal;
-import java.util.regex.Pattern;
 
 public class Loan {
-    // Reuse the same name rule used by input validation to keep model constraints consistent.
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}]+(?: [\\p{L}]+)*$");
-
     // Auto-incremented ID for demo purposes (in-memory only).
     private static int nextLoanId = 1;
 
@@ -12,6 +8,7 @@ public class Loan {
     private final String customerName;
     private final BigDecimal loanAmount;
     private BigDecimal paidAmount;
+    private final boolean initialOverpaymentAdjusted;
 
     public Loan(String customerName, BigDecimal loanAmount, BigDecimal paidAmount) {
         // Constructor guards keep every Loan object valid from creation.
@@ -30,11 +27,13 @@ public class Loan {
         this.loanAmount = loanAmount;
         this.paidAmount = paidAmount;
 
-        // Clamp overpaid initial amounts and report refund behavior.
+        // Clamp overpaid initial amounts; caller decides how to notify user.
+        boolean adjusted = false;
         if (this.paidAmount.compareTo(this.loanAmount) > 0) {
             this.paidAmount = this.loanAmount;
-            System.out.println("Excess payment has been refunded.");
+            adjusted = true;
         }
+        this.initialOverpaymentAdjusted = adjusted;
     }
 
     public String getCustomerName() {
@@ -43,6 +42,18 @@ public class Loan {
 
     public int getLoanId() {
         return loanId;
+    }
+
+    public BigDecimal getLoanAmount() {
+        return loanAmount;
+    }
+
+    public BigDecimal getPaidAmount() {
+        return paidAmount;
+    }
+
+    public boolean isInitialOverpaymentAdjusted() {
+        return initialOverpaymentAdjusted;
     }
 
     // Returns how much is still unpaid.
@@ -64,7 +75,7 @@ public class Loan {
     }
 
     // Adds repayment amount to paid amount.
-    public void makePayment(BigDecimal amount) {
+    public boolean makePayment(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Repayment amount must be a positive number.");
         }
@@ -76,20 +87,13 @@ public class Loan {
         // Prevent balance from going negative when payment exceeds the remaining amount.
         if (paidAmount.compareTo(loanAmount) > 0) {
             paidAmount = loanAmount;
-            System.out.println("Excess payment has been refunded.");
+            return true;
         }
+        return false;
     }
 
     private static boolean isValidName(String name) {
-        return NAME_PATTERN.matcher(name).matches();
+        return ValidationPatterns.NAME_PATTERN.matcher(name).matches();
     }
 
-    public void displayLoanInfo() {
-        System.out.println("Customer ID  : " + loanId);
-        System.out.println("Customer Name: " + customerName);
-        System.out.println("Loan Amount  : " + loanAmount);
-        System.out.println("Paid Amount  : " + paidAmount);
-        System.out.println("Remaining    : " + calculateRemainingBalance());
-        System.out.println("Status       : " + getLoanStatus());
-    }
 }

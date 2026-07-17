@@ -1,13 +1,7 @@
 import java.math.BigDecimal;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 public class Main {
-    // Accept names made of letters (including Unicode letters) with single spaces between words.
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}]+(?: [\\p{L}]+)*$");
-    // Reject zero and allow positive decimal numbers for repayments.
-    private static final Pattern POSITIVE_AMOUNT_PATTERN = Pattern.compile("^(?!0+(?:\\.0+)?$)\\d+(?:\\.\\d+)?$");
-
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         // Simple fixed-size in-memory storage for this console app.
@@ -34,6 +28,9 @@ public class Main {
 
                     try {
                         loans[loanCount] = new Loan(name, loanAmount, paidAmount);
+                        if (loans[loanCount].isInitialOverpaymentAdjusted()) {
+                            System.out.println("Excess payment has been refunded.");
+                        }
                         System.out.println("Customer loan added successfully. Customer ID: " + loans[loanCount].getLoanId());
                         loanCount++;
                     } catch (IllegalArgumentException ex) {
@@ -72,7 +69,10 @@ public class Main {
                     BigDecimal payment = readRepaymentAmountByRegex(scanner, "Enter repayment amount: ");
 
                     try {
-                        loans[index].makePayment(payment);
+                        boolean wasRefunded = loans[index].makePayment(payment);
+                        if (wasRefunded) {
+                            System.out.println("Excess payment has been refunded.");
+                        }
                         System.out.println("Repayment updated successfully.");
                     } catch (IllegalArgumentException ex) {
                         System.out.println("Error: " + ex.getMessage());
@@ -85,7 +85,7 @@ public class Main {
                     System.out.println("\n--- All Loan Records ---");
                     for (int i = 0; i < loanCount; i++) {
                         System.out.println("\nRecord Index: " + i);
-                        loans[i].displayLoanInfo();
+                        displayLoanInfo(loans[i]);
                     }
                 }
             } else if (choice == 4) {
@@ -179,7 +179,7 @@ public class Main {
     }
 
     private static boolean isValidName(String name) {
-        return NAME_PATTERN.matcher(name).matches();
+        return ValidationPatterns.NAME_PATTERN.matcher(name).matches();
     }
 
     private static BigDecimal readRepaymentAmountByRegex(Scanner scanner, String prompt) {
@@ -187,7 +187,7 @@ public class Main {
         while (true) {
             System.out.print(prompt);
             String input = scanner.nextLine().trim();
-            if (POSITIVE_AMOUNT_PATTERN.matcher(input).matches()) {
+            if (ValidationPatterns.POSITIVE_AMOUNT_PATTERN.matcher(input).matches()) {
                 return new BigDecimal(input);
             }
             System.out.println("Invalid amount. Repayment must be a positive number.");
@@ -202,6 +202,15 @@ public class Main {
             }
         }
         return -1;
+    }
+
+    private static void displayLoanInfo(Loan loan) {
+        System.out.println("Customer ID  : " + loan.getLoanId());
+        System.out.println("Customer Name: " + loan.getCustomerName());
+        System.out.println("Loan Amount  : " + loan.getLoanAmount());
+        System.out.println("Paid Amount  : " + loan.getPaidAmount());
+        System.out.println("Remaining    : " + loan.calculateRemainingBalance());
+        System.out.println("Status       : " + loan.getLoanStatus());
     }
 }
 
