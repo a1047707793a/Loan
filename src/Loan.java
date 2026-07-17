@@ -1,9 +1,9 @@
+import interfaces.LoanRules;
+
 import java.math.BigDecimal;
-import java.util.regex.Pattern;
 
 public class Loan {
-    // Reuse the same name rule used by input validation to keep model constraints consistent.
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[\\p{L}]+(?: [\\p{L}]+)*$");
+    private static final LoanRules DEFAULT_RULES = DefaultLoanRules.getInstance();
 
     // Auto-incremented ID for demo purposes (in-memory only).
     private static int nextLoanId = 1;
@@ -12,29 +12,28 @@ public class Loan {
     private final String customerName;
     private final BigDecimal loanAmount;
     private BigDecimal paidAmount;
+    private final boolean initialOverpaymentAdjusted;
+    private final LoanRules loanRules;
 
     public Loan(String customerName, BigDecimal loanAmount, BigDecimal paidAmount) {
+        this(customerName, loanAmount, paidAmount, DEFAULT_RULES);
+    }
+
+    public Loan(String customerName, BigDecimal loanAmount, BigDecimal paidAmount, LoanRules loanRules) {
         // Constructor guards keep every Loan object valid from creation.
-        if (customerName == null || customerName.trim().isEmpty() || !isValidName(customerName.trim())) {
-            throw new IllegalArgumentException("Customer name must contain letters and spaces only.");
-        }
-        if (loanAmount == null || loanAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Loan amount must be a positive number.");
-        }
-        if (paidAmount == null || paidAmount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Initial paid amount must be a non-negative number.");
-        }
+        this.loanRules = loanRules == null ? DEFAULT_RULES : loanRules;
+        this.loanRules.validateCustomerName(customerName);
+        this.loanRules.validateLoanAmount(loanAmount);
+        this.loanRules.validateInitialPaidAmount(paidAmount);
 
         this.loanId = nextLoanId++;
         this.customerName = customerName.trim();
         this.loanAmount = loanAmount;
-        this.paidAmount = paidAmount;
+        BigDecimal normalizedPaidAmount = this.loanRules.normalizePaidAmount(this.loanAmount, paidAmount);
+        this.paidAmount = normalizedPaidAmount;
 
-        // Clamp overpaid initial amounts and report refund behavior.
-        if (this.paidAmount.compareTo(this.loanAmount) > 0) {
-            this.paidAmount = this.loanAmount;
-            System.out.println("Excess payment has been refunded.");
-        }
+        // Clamp overpaid initial amounts; caller decides how to notify user.
+        this.initialOverpaymentAdjusted = normalizedPaidAmount.compareTo(paidAmount) != 0;
     }
 
     public String getCustomerName() {
@@ -45,51 +44,34 @@ public class Loan {
         return loanId;
     }
 
+    public BigDecimal getLoanAmount() {
+        return loanAmount;
+    }
+
+    public BigDecimal getPaidAmount() {
+        return paidAmount;
+    }
+
+    public boolean isInitialOverpaymentAdjusted() {
+        return initialOverpaymentAdjusted;
+    }
+
     // Returns how much is still unpaid.
     public BigDecimal calculateRemainingBalance() {
-        BigDecimal remaining = loanAmount.subtract(paidAmount);
-        if (remaining.compareTo(BigDecimal.ZERO) < 0) {
-            remaining = BigDecimal.ZERO;
-        }
-        return remaining;
+        return loanRules.calculateRemainingBalance(loanAmount, paidAmount);
     }
 
     // Returns loan status based on remaining balance.
     public String getLoanStatus() {
-        if (calculateRemainingBalance().compareTo(BigDecimal.ZERO) == 0) {
-            return "Completed";
-        } else {
-            return "Outstanding";
-        }
+        return loanRules.determineLoanStatus(loanAmount, paidAmount);
     }
 
     // Adds repayment amount to paid amount.
-    public void makePayment(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Repayment amount must be a positive number.");
-        }
-        if (calculateRemainingBalance().compareTo(BigDecimal.ZERO) == 0) {
-            throw new IllegalArgumentException("This loan is already completed.");
-        }
-
-        paidAmount = paidAmount.add(amount);
-        // Prevent balance from going negative when payment exceeds the remaining amount.
-        if (paidAmount.compareTo(loanAmount) > 0) {
-            paidAmount = loanAmount;
-            System.out.println("Excess payment has been refunded.");
-        }
+    public boolean makePayment(BigDecimal amount) {
+        BigDecimal updatedPaidAmount = loanRules.applyRepayment(loanAmount, paidAmount, amount);
+        boolean overpaymentAdjusted = updatedPaidAmount.compareTo(paidAmount.add(amount)) < 0;
+        paidAmount = updatedPaidAmount;
+        return overpaymentAdjusted;
     }
 
-    private static boolean isValidName(String name) {
-        return NAME_PATTERN.matcher(name).matches();
-    }
-
-    public void displayLoanInfo() {
-        System.out.println("Customer ID  : " + loanId);
-        System.out.println("Customer Name: " + customerName);
-        System.out.println("Loan Amount  : " + loanAmount);
-        System.out.println("Paid Amount  : " + paidAmount);
-        System.out.println("Remaining    : " + calculateRemainingBalance());
-        System.out.println("Status       : " + getLoanStatus());
-    }
 }
