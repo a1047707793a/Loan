@@ -1,3 +1,5 @@
+import interfaces.LoanRules;
+
 import java.math.BigDecimal;
 
 public class Loan {

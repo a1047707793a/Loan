@@ -1,4 +1,9 @@
+import exceptions.InvalidCustomerIdException;
+import exceptions.LoanProcessingException;
+import interfaces.LoanRules;
+
 import java.math.BigDecimal;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class Main {
@@ -12,88 +17,90 @@ public class Main {
         int choice;
 
         do {
-            System.out.println("\n===== Loan Repayment Calculator =====");
-            System.out.println("1. Add Loan Customer");
-            System.out.println("2. Make Repayment");
-            System.out.println("3. Display All Loans");
-            System.out.println("4. Exit");
-            choice = readIntInRange(scanner, "Choose option: ", 1, 4);
+            try {
+                System.out.println("\n===== Loan Repayment Calculator =====");
+                System.out.println("1. Add Loan Customer");
+                System.out.println("2. Make Repayment");
+                System.out.println("3. Display All Loans");
+                System.out.println("4. Exit");
+                choice = readIntInRange(scanner, "Choose option: ", 1, 4);
 
-            // Route menu choices to the corresponding action.
-            if (choice == 1) {
-                if (loanCount >= loans.length) {
-                    System.out.println("Database is full. Cannot add more customers.");
-                } else {
-                    String name = readValidName(scanner);
-                    BigDecimal loanAmount = readPositiveAmount(scanner, "Enter loan amount: ");
-                    BigDecimal paidAmount = readNonNegativeAmount(scanner);
+                // Route menu choices to the corresponding action.
+                if (choice == 1) {
+                    if (loanCount >= loans.length) {
+                        System.out.println("Database is full. Cannot add more customers.");
+                    } else {
+                        String name = readValidName(scanner);
+                        BigDecimal loanAmount = readPositiveAmount(scanner, "Enter loan amount: ");
+                        BigDecimal paidAmount = readNonNegativeAmount(scanner);
 
-                    try {
-                        loans[loanCount] = new Loan(name, loanAmount, paidAmount);
-                        if (loans[loanCount].isInitialOverpaymentAdjusted()) {
-                            System.out.println("Excess payment has been refunded.");
-                        }
-                        System.out.println("Customer loan added successfully. Customer ID: " + loans[loanCount].getLoanId());
-                        loanCount++;
-                    } catch (IllegalArgumentException ex) {
-                        System.out.println("Error: " + ex.getMessage());
-                    }
-                }
-            } else if (choice == 2) {
-                if (loanCount == 0) {
-                    System.out.println("No customers available. Add a loan first.");
-                } else {
-                    System.out.println("Available customers for repayment (ID - Name):");
-                    boolean hasOutstandingLoan = false;
-                    for (int i = 0; i < loanCount; i++) {
-                        if (loans[i].calculateRemainingBalance().compareTo(BigDecimal.ZERO) > 0) {
-                            System.out.println(loans[i].getLoanId() + " - " + loans[i].getCustomerName());
-                            hasOutstandingLoan = true;
+                        try {
+                            loans[loanCount] = new Loan(name, loanAmount, paidAmount);
+                            if (loans[loanCount].isInitialOverpaymentAdjusted()) {
+                                System.out.println("Excess payment has been refunded.");
+                            }
+                            System.out.println("Customer loan added successfully. Customer ID: " + loans[loanCount].getLoanId());
+                            loanCount++;
+                        } catch (LoanProcessingException ex) {
+                            System.out.println("Error: " + ex.getMessage());
                         }
                     }
-
-                    if (!hasOutstandingLoan) {
-                        System.out.println("No outstanding loans available for repayment.");
-                        continue;
-                    }
-
-                    int customerId = readPositiveInt(scanner, "Enter customer ID: ");
-                    int index = findLoanIndexById(loans, loanCount, customerId);
-                    if (index == -1) {
-                        System.out.println("Invalid customer ID.");
-                        continue;
-                    }
-                    if (loans[index].calculateRemainingBalance().compareTo(BigDecimal.ZERO) == 0) {
-                        System.out.println("This loan is already completed and cannot receive more repayments.");
-                        continue;
-                    }
-
-                    BigDecimal payment = readRepaymentAmountByRegex(scanner, "Enter repayment amount: ");
-
-                    try {
-                        boolean wasRefunded = loans[index].makePayment(payment);
-                        if (wasRefunded) {
-                            System.out.println("Excess payment has been refunded.");
+                } else if (choice == 2) {
+                    if (loanCount == 0) {
+                        System.out.println("No customers available. Add a loan first.");
+                    } else {
+                        System.out.println("Available customers for repayment (ID - Name):");
+                        boolean hasOutstandingLoan = false;
+                        for (int i = 0; i < loanCount; i++) {
+                            if (loans[i].calculateRemainingBalance().compareTo(BigDecimal.ZERO) > 0) {
+                                System.out.println(loans[i].getLoanId() + " - " + loans[i].getCustomerName());
+                                hasOutstandingLoan = true;
+                            }
                         }
-                        System.out.println("Repayment updated successfully.");
-                    } catch (IllegalArgumentException ex) {
-                        System.out.println("Error: " + ex.getMessage());
+
+                        if (!hasOutstandingLoan) {
+                            System.out.println("No outstanding loans available for repayment.");
+                            continue;
+                        }
+
+                        try {
+                            int customerId = readPositiveInt(scanner, "Enter customer ID: ");
+                            int index = findLoanIndexById(loans, loanCount, customerId);
+                            BigDecimal payment = readRepaymentAmountByRegex(scanner, "Enter repayment amount: ");
+
+                            boolean wasRefunded = loans[index].makePayment(payment);
+                            if (wasRefunded) {
+                                System.out.println("Excess payment has been refunded.");
+                            }
+                            System.out.println("Repayment updated successfully.");
+                        } catch (LoanProcessingException ex) {
+                            System.out.println("Error: " + ex.getMessage());
+                        }
                     }
-                }
-            } else if (choice == 3) {
-                if (loanCount == 0) {
-                    System.out.println("No loan records found.");
+                } else if (choice == 3) {
+                    if (loanCount == 0) {
+                        System.out.println("No loan records found.");
+                    } else {
+                        System.out.println("\n--- All Loan Records ---");
+                        for (int i = 0; i < loanCount; i++) {
+                            System.out.println("\nRecord Index: " + i);
+                            displayLoanInfo(loans[i]);
+                        }
+                    }
+                } else if (choice == 4) {
+                    System.out.println("Exiting program...");
                 } else {
-                    System.out.println("\n--- All Loan Records ---");
-                    for (int i = 0; i < loanCount; i++) {
-                        System.out.println("\nRecord Index: " + i);
-                        displayLoanInfo(loans[i]);
-                    }
+                    System.out.println("Invalid option. Please try again.");
                 }
-            } else if (choice == 4) {
-                System.out.println("Exiting program...");
-            } else {
-                System.out.println("Invalid option. Please try again.");
+            } catch (LoanProcessingException ex) {
+                System.out.println("Error: " + ex.getMessage());
+                choice = 0;
+            } catch (NoSuchElementException ex) {
+                System.out.println("Input stream ended. Exiting program...");
+                choice = 4;
+            } catch (RuntimeException ex) {
+                System.out.println("Unexpected error: " + ex.getMessage());
+                choice = 0;
             }
         } while (choice != 4);
 
@@ -203,7 +210,7 @@ public class Main {
                 return i;
             }
         }
-        return -1;
+        throw new InvalidCustomerIdException("Invalid customer ID.");
     }
 
     private static void displayLoanInfo(Loan loan) {

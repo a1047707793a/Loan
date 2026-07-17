@@ -67,14 +67,14 @@
 
 最稳妥的是：
 
-- 一个接口：`LoanRules`
+- 一个接口：`interfaces.LoanRules`
 - 一个实现类：`DefaultLoanRules`
 
 这样最符合你“不能推倒重来、只能最小修改”的约束。
 
 ## 四、建议新增的 Interface 设计
 
-### 1. 接口：`LoanRules`
+### 1. 接口：`interfaces.LoanRules`
 
 职责：定义所有“银行政策级”的规则。
 
@@ -131,15 +131,15 @@
 
 #### `Loan` 里要改变的内容
 
-把原来内部写死的规则，改为调用 `LoanRules`。
+把原来内部写死的规则，改为调用 `interfaces.LoanRules`。
 
 也就是说：
 
-- 构造器中的校验 → 调用 `LoanRules`
-- 初始 overpayment 处理 → 调用 `LoanRules`
-- `calculateRemainingBalance()` → 调用 `LoanRules`
-- `getLoanStatus()` → 调用 `LoanRules`
-- `makePayment(...)` → 调用 `LoanRules`
+- 构造器中的校验 → 调用 `interfaces.LoanRules`
+- 初始 overpayment 处理 → 调用 `interfaces.LoanRules`
+- `calculateRemainingBalance()` → 调用 `interfaces.LoanRules`
+- `getLoanStatus()` → 调用 `interfaces.LoanRules`
+- `makePayment(...)` → 调用 `interfaces.LoanRules`
 
 #### 这样做的好处
 
@@ -188,7 +188,7 @@
 
 ## 七、这次具体改了什么
 
-### 1. 新增接口 `src/LoanRules.java`
+### 1. 新增接口 `src/interfaces.LoanRules.java`
 
 把“会变化的业务规则”抽象出来，包括：
 
@@ -223,7 +223,7 @@
 `Loan` 现在不再自己硬编码主要业务规则，而是：
 
 - 默认依赖 `DefaultLoanRules`
-- 构造函数里的校验改为调用 `LoanRules`
+- 构造函数里的校验改为调用 `interfaces.LoanRules`
 - `calculateRemainingBalance()` 改为委托规则对象
 - `getLoanStatus()` 改为委托规则对象
 - `makePayment()` 改为委托规则对象
@@ -241,8 +241,8 @@
 
 把 `Main` 里原本直接写死的一些规则判断，也改为通过同一个规则对象复用：
 
-- `isValidName()` 现在走 `LoanRules`
-- repayment 输入格式校验现在走 `LoanRules`
+- `isValidName()` 现在走 `interfaces.LoanRules`
+- repayment 输入格式校验现在走 `interfaces.LoanRules`
 
 这样做的好处是：
 
@@ -262,7 +262,7 @@
 
 只是增加：
 
-- 一个接口 `LoanRules`
+- 一个接口 `interfaces.LoanRules`
 - 一个默认实现 `DefaultLoanRules`
 
 然后让现有 `Loan / Main` 接上去。
